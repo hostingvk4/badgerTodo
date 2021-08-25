@@ -1,2 +1,2 @@
-# badgerTodo
-badger todo
+# badgerList
+badger list
