@@ -7,20 +7,33 @@ import (
 	"strconv"
 )
 
+// @Summary Create list
+// @Security ApiKeyAuth
+// @Tags lists
+// @Description create list
+// @ID create-list
+// @Accept  json
+// @Produce  json
+// @Param input body models.ListDto true "list info"
+// @Success 200 {integer} integer 1
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /api/lists [post]
 func (h *Handler) createList(c *gin.Context) {
 	userId, err := getUserId(c)
 	if err != nil {
 		return
 	}
-	var input models.List
-	if err := c.BindJSON(&input); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+	var listDto models.ListDto
+	if err := c.BindJSON(&listDto); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	input.UserId = userId
-	id, err := h.services.List.Create(input)
+	listDto.UserId = userId
+	id, err := h.services.List.Create(models.ToList(listDto))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, map[string]interface{}{
@@ -28,6 +41,18 @@ func (h *Handler) createList(c *gin.Context) {
 	})
 }
 
+// @Summary Get All Lists
+// @Security ApiKeyAuth
+// @Tags lists
+// @Description get all lists
+// @ID get-all-lists
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} models.ListDto
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /api/lists [get]
 func (h *Handler) getAllLists(c *gin.Context) {
 	userId, err := getUserId(c)
 	if err != nil {
@@ -35,12 +60,25 @@ func (h *Handler) getAllLists(c *gin.Context) {
 	}
 	lists, err := h.services.List.GetAll(userId)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, lists)
+	c.JSON(http.StatusOK, models.ToListDTOs(lists))
 }
 
+// @Summary Get List By Id
+// @Security ApiKeyAuth
+// @Tags lists
+// @Description get list by id
+// @Param id path int true "List ID"
+// @ID get-list-by-id
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} models.ListDto
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /api/lists/{id} [get]
 func (h *Handler) getListById(c *gin.Context) {
 	userId, err := getUserId(c)
 	if err != nil {
@@ -48,43 +86,74 @@ func (h *Handler) getListById(c *gin.Context) {
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "id list not found")
+		newErrorResponse(c, http.StatusBadRequest, "id list not found")
 		return
 	}
-	list, err := h.services.List.GetListById(userId, id)
+	list, err := h.services.List.GetListById(userId, uint(id))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, list)
+	if list.UserId == 0 {
+		newErrorResponse(c, http.StatusBadRequest, "id list not found")
+		return
+	}
+	c.JSON(http.StatusOK, models.ToListDto(list))
 }
 
+// @Summary Update List By Id
+// @Security ApiKeyAuth
+// @Tags lists
+// @Description update list
+// @Param id path int true "List ID"
+// @ID update-list
+// @Accept  json
+// @Produce  json
+// @Param input body models.ListDto true "list info"
+// @Success 200 {object} models.ListDto
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /api/lists/{id} [put]
 func (h *Handler) updateList(c *gin.Context) {
+	var listDto models.ListDto
+	var list models.List
 	userId, err := getUserId(c)
 	if err != nil {
 		return
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "id param error")
+		newErrorResponse(c, http.StatusBadRequest, "id param error")
 		return
 	}
-	var input models.UpdateListInput
-	if err = c.BindJSON(&input); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, err.Error())
+	if err = c.BindJSON(&listDto); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	err = h.services.List.Update(userId, id, input)
+	list.Title = listDto.Title
+	list.Description = listDto.Description
+	err = h.services.List.Update(userId, uint(id), list)
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
-	c.JSON(http.StatusOK, map[string]interface{}{
-		"title":       input.Title,
-		"description": input.Description,
-	})
+	c.JSON(http.StatusOK, models.ToListDto(list))
 }
 
+// @Summary Delete List By Id
+// @Security ApiKeyAuth
+// @Tags lists
+// @Description delete list
+// @Param id path int true "List ID"
+// @ID delete-list
+// @Accept  json
+// @Produce  json
+// @Success 200 {object} map[string]interface{}
+// @Failure 400,404 {object} errorResponse
+// @Failure 500 {object} errorResponse
+// @Failure default {object} errorResponse
+// @Router /api/lists/{id} [delete]
 func (h *Handler) deleteList(c *gin.Context) {
 	userId, err := getUserId(c)
 	if err != nil {
@@ -92,12 +161,12 @@ func (h *Handler) deleteList(c *gin.Context) {
 	}
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, "id list not found")
+		newErrorResponse(c, http.StatusBadRequest, "id list not found")
 		return
 	}
-	err = h.services.List.Delete(userId, id)
+	err = h.services.List.Delete(userId, uint(id))
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError, err.Error())
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	c.JSON(http.StatusOK, map[string]interface{}{

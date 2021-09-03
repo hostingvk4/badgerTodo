@@ -6,17 +6,17 @@ import (
 )
 
 type Authorization interface {
-	CreateUser(user models.User) (int, error)
+	CreateUser(user models.User) (uint, error)
 	GenerateToken(username, password string) (string, error)
-	ParseToken(token string) (int, error)
+	ParseToken(token string) (uint, error)
 }
 
 type List interface {
-	Create(list models.List) (int, error)
-	GetAll(userId int) ([]models.List, error)
-	GetListById(userId, listId int) (models.List, error)
-	Update(userId, id int, list models.UpdateListInput) error
-	Delete(userId, listId int) error
+	Create(list models.List) (uint, error)
+	GetAll(userId uint) ([]models.List, error)
+	GetListById(userId, listId uint) (models.List, error)
+	Update(userId, id uint, list models.List) error
+	Delete(userId, listId uint) error
 }
 
 type Service struct {

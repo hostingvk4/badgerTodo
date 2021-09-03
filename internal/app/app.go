@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"context"
@@ -14,17 +14,7 @@ import (
 	"syscall"
 )
 
-// @title List App Api
-// @version 1.0
-// @description Api Server for List Application
-
-// @host localhost:8000
-// @BasePath /
-
-// @securityDefinitions.apikey ApiKeyAuth
-// @in header
-// @name Authorization
-func main() {
+func Run(configPath string) {
 	db := database.NewPostgresDB()
 	repos := repository.NewRepository(db)
 	services := service.NewService(repos)

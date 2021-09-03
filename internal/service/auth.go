@@ -28,7 +28,7 @@ func NewAuthService(repo repository.Authorization) *AuthService {
 	return &AuthService{repo: repo}
 }
 
-func (s *AuthService) CreateUser(user models.User) (int, error) {
+func (s *AuthService) CreateUser(user models.User) (uint, error) {
 	user.Password = generatePasswordHash(user.Password)
 	id, err := s.repo.CreateUser(user)
 	return id, err
@@ -58,7 +58,7 @@ func generatePasswordHash(password string) string {
 
 	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
 }
-func (s *AuthService) ParseToken(accessToken string) (int, error) {
+func (s *AuthService) ParseToken(accessToken string) (uint, error) {
 	token, err := jwt.ParseWithClaims(
 		accessToken,
 		&tokenClaims{},
@@ -75,5 +75,5 @@ func (s *AuthService) ParseToken(accessToken string) (int, error) {
 	if !ok {
 		return 0, errors.New("token claims are not of type *tokenClaims")
 	}
-	return claims.UserId, nil
+	return uint(claims.UserId), nil
 }

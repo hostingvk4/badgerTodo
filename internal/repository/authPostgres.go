@@ -13,10 +13,10 @@ func NewAuthPostgres(db *gorm.DB) *AuthPostgres {
 	return &AuthPostgres{db: db}
 }
 
-func (r *AuthPostgres) CreateUser(user models.User) (int, error) {
+func (r *AuthPostgres) CreateUser(user models.User) (uint, error) {
 	result := r.db.Create(&user)
 
-	return int(user.ID), result.Error
+	return uint(user.ID), result.Error
 }
 
 func (r *AuthPostgres) GetUser(username, password string) (models.User, error) {

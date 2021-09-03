@@ -4,11 +4,13 @@ import "gorm.io/gorm"
 
 type List struct {
 	gorm.Model
-	Title       string `json:"title" binding:"required"`
-	UserId      int    `json:"user_id"`
-	Description string `json:"description"`
+	Title       string
+	UserId      uint
+	Description string
 }
-type UpdateListInput struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
+type ListDto struct {
+	ID          uint   `json:"id,string,omitempty"`
+	Title       string `json:"title" binding:"required"`
+	UserId      uint   `json:"user_id"`
+	Description string `json:"description" binding:"required"`
 }
