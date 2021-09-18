@@ -3,12 +3,14 @@ package service
 import (
 	"github.com/hostingvk4/badgerList/internal/models"
 	"github.com/hostingvk4/badgerList/internal/repository"
+	"github.com/hostingvk4/badgerList/pkg/auth"
+	"time"
 )
 
 type Authorization interface {
 	CreateUser(user models.User) (uint, error)
-	GenerateToken(username, password string) (string, error)
-	ParseToken(token string) (uint, error)
+	GenerateToken(username, password string) (Tokens, error)
+	ParseToken(token string) (string, error)
 }
 
 type List interface {
@@ -24,9 +26,24 @@ type Service struct {
 	List
 }
 
-func NewService(repos *repository.Repository) *Service {
+type Tokens struct {
+	AccessToken  string
+	RefreshToken string
+}
+
+type ServicesConfig struct {
+	Repos              *repository.Repository
+	TokenAdministrator auth.TokenAdministrator
+	RefreshTokenTTL    time.Duration
+}
+
+func NewService(servicesConfig ServicesConfig) *Service {
 	return &Service{
-		Authorization: NewAuthService(repos.Authorization),
-		List:          NewListService(repos.List),
+		Authorization: NewAuthService(
+			servicesConfig.Repos.Authorization,
+			servicesConfig.TokenAdministrator,
+			servicesConfig.RefreshTokenTTL,
+		),
+		List: NewListService(servicesConfig.Repos.List),
 	}
 }

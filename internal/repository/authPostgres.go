@@ -25,3 +25,9 @@ func (r *AuthPostgres) GetUser(username, password string) (models.User, error) {
 
 	return userModel, result.Error
 }
+
+func (r *AuthPostgres) SetRefreshToken(userId uint, token models.RefreshToken) error {
+	result := r.db.Create(&token)
+
+	return result.Error
+}

@@ -6,10 +6,11 @@ import (
 
 type User struct {
 	gorm.Model
-	Name     string
-	Username string `gorm:"size:255;unique"`
-	Password string
-	List     []List
+	Name         string
+	Username     string `gorm:"size:255;unique"`
+	Password     string
+	List         []List
+	RefreshToken []RefreshToken
 }
 
 type UserDto struct {

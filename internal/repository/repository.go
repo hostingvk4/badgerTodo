@@ -8,6 +8,7 @@ import (
 type Authorization interface {
 	CreateUser(user models.User) (uint, error)
 	GetUser(username, password string) (models.User, error)
+	SetRefreshToken(userId uint, RefreshToken models.RefreshToken) error
 }
 
 type List interface {

@@ -8,6 +8,7 @@ import (
 	"github.com/hostingvk4/badgerList/internal/repository/database"
 	"github.com/hostingvk4/badgerList/internal/server"
 	"github.com/hostingvk4/badgerList/internal/service"
+	"github.com/hostingvk4/badgerList/pkg/auth"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"log"
@@ -15,6 +16,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func Run(configPath string) {
@@ -35,9 +37,16 @@ func Run(configPath string) {
 	})
 	if err != nil {
 		log.Fatalf("failed to initialize db: %s", err.Error())
+		return
 	}
+	tokenAdministrator, err := auth.NewAdministrator("qweqsadawqe234324asdas")
+	if err != nil {
+		log.Fatalf("failed to initialize signing key : %s", err.Error())
+		return
+	}
+
 	repos := repository.NewRepository(db)
-	services := service.NewService(repos)
+	services := service.NewService(service.ServicesConfig{Repos: repos, TokenAdministrator: tokenAdministrator, RefreshTokenTTL: 24 * time.Hour})
 	handlers := handler.NewHandler(services)
 	srv := new(server.Server)
 	go func() {

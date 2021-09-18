@@ -4,28 +4,28 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
-	"github.com/dgrijalva/jwt-go"
 	"github.com/hostingvk4/badgerList/internal/models"
 	"github.com/hostingvk4/badgerList/internal/repository"
+	"github.com/hostingvk4/badgerList/pkg/auth"
+	"strconv"
 	"time"
 )
 
 const (
-	salt       = "aweawddsadfas23423asda"
-	signingKey = "qweqsadawqe234324asdas"
-	tokenTTL   = 12 * time.Hour
+	salt = "aweawddsadfas23423asda"
 )
 
 type AuthService struct {
-	repo repository.Authorization
-}
-type tokenClaims struct {
-	jwt.StandardClaims
-	UserId int `json:"user_id"`
+	repo               repository.Authorization
+	tokenAdministrator auth.TokenAdministrator
+	refreshTokenTTL    time.Duration
 }
 
-func NewAuthService(repo repository.Authorization) *AuthService {
-	return &AuthService{repo: repo}
+func NewAuthService(
+	repo repository.Authorization,
+	tokenAdministrator auth.TokenAdministrator,
+	refreshTokenTTL time.Duration) *AuthService {
+	return &AuthService{repo: repo, tokenAdministrator: tokenAdministrator, refreshTokenTTL: refreshTokenTTL}
 }
 
 func (s *AuthService) CreateUser(user models.User) (uint, error) {
@@ -33,23 +33,16 @@ func (s *AuthService) CreateUser(user models.User) (uint, error) {
 	id, err := s.repo.CreateUser(user)
 	return id, err
 }
-func (s *AuthService) GenerateToken(username, password string) (string, error) {
+func (s *AuthService) GenerateToken(username, password string) (Tokens, error) {
 	userModel, err := s.repo.GetUser(username, generatePasswordHash(password))
 	if err != nil {
-		return "", err
+		return Tokens{}, err
 	}
 	if userModel.ID == 0 {
-		return "", errors.New("customer not found")
+		return Tokens{}, errors.New("customer not found")
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(tokenTTL).Unix(),
-			IssuedAt:  time.Now().Unix(),
-		},
-		int(userModel.ID)})
-
-	return token.SignedString([]byte(signingKey))
+	return s.createTokens(userModel.ID)
 }
 
 func generatePasswordHash(password string) string {
@@ -58,22 +51,32 @@ func generatePasswordHash(password string) string {
 
 	return fmt.Sprintf("%x", hash.Sum([]byte(salt)))
 }
-func (s *AuthService) ParseToken(accessToken string) (uint, error) {
-	token, err := jwt.ParseWithClaims(
-		accessToken,
-		&tokenClaims{},
-		func(token *jwt.Token) (interface{}, error) {
-			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, errors.New("invalid signing method")
-			}
-			return []byte(signingKey), nil
-		})
+func (s *AuthService) ParseToken(accessToken string) (string, error) {
+	id, err := s.tokenAdministrator.Parse(accessToken)
+	return id, err
+}
+
+func (s *AuthService) createTokens(userId uint) (Tokens, error) {
+	var (
+		res Tokens
+		err error
+	)
+
+	res.AccessToken, err = s.tokenAdministrator.NewJWT(strconv.Itoa(int(userId)), s.refreshTokenTTL)
 	if err != nil {
-		return 0, err
+		return res, err
 	}
-	claims, ok := token.Claims.(*tokenClaims)
-	if !ok {
-		return 0, errors.New("token claims are not of type *tokenClaims")
+
+	res.RefreshToken, err = s.tokenAdministrator.NewRefreshToken()
+	if err != nil {
+		return res, err
 	}
-	return uint(claims.UserId), nil
+	RefreshToken := models.RefreshToken{
+		RefreshToken: res.RefreshToken,
+		UserId:       userId,
+		ExpiresAt:    time.Now().Add(s.refreshTokenTTL),
+	}
+	err = s.repo.SetRefreshToken(userId, RefreshToken)
+
+	return res, err
 }
