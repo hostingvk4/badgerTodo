@@ -6,3 +6,7 @@ db:
   port: "3387"
   dbname: "postgres_database"
   sslmode: "disable"
+password:
+  salt: "aweawddsadfas23423asda"
+token:
+  signingkey: "qweqsadawqe234324asdas"

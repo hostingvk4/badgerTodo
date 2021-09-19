@@ -40,8 +40,8 @@ func Run(configPath string) {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 		return
 	}
-	cipherPass := cipher.NewCipher("aweawddsadfas23423asda")
-	tokenAdministrator, err := auth.NewAdministrator("qweqsadawqe234324asdas")
+	cipherPass := cipher.NewCipher(viper.GetString("password.salt"))
+	tokenAdministrator, err := auth.NewAdministrator(viper.GetString("token.signingkey"))
 	if err != nil {
 		log.Fatalf("failed to initialize signing key : %s", err.Error())
 		return
