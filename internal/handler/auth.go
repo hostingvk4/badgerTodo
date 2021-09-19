@@ -11,6 +11,11 @@ type signInForm struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type refreshTokenForm struct {
+	UserId       int    `json:"userId" binding:"required"`
+	RefreshToken string `json:"refreshToken" binding:"required"`
+}
+
 // @Summary SignUp
 // @Tags auth
 // @Description create account
@@ -52,6 +57,23 @@ func (h *Handler) signIn(c *gin.Context) {
 		return
 	}
 	tokens, err := h.services.Authorization.GenerateToken(input.Username, input.Password)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, map[string]interface{}{
+		"token":        tokens.AccessToken,
+		"refreshToken": tokens.RefreshToken,
+	})
+}
+
+func (h *Handler) refreshToken(c *gin.Context) {
+	var input refreshTokenForm
+	if err := c.BindJSON(&input); err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	tokens, err := h.services.Authorization.RefreshToken(uint(input.UserId), input.RefreshToken)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return

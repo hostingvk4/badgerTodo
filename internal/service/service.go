@@ -11,7 +11,8 @@ import (
 type Authorization interface {
 	CreateUser(user models.User) (uint, error)
 	GenerateToken(username, password string) (Tokens, error)
-	ParseToken(token string) (string, error)
+	ParseToken(token string) (uint, error)
+	RefreshToken(userId uint, refreshToken string) (Tokens, error)
 }
 
 type List interface {
@@ -36,6 +37,7 @@ type ServicesConfig struct {
 	Repos              *repository.Repository
 	TokenAdministrator auth.TokenAdministrator
 	RefreshTokenTTL    time.Duration
+	TokenTTL           time.Duration
 	Cipher             cipher.PasswordCipher
 }
 
@@ -45,6 +47,7 @@ func NewService(servicesConfig ServicesConfig) *Service {
 			servicesConfig.Repos.Authorization,
 			servicesConfig.TokenAdministrator,
 			servicesConfig.RefreshTokenTTL,
+			servicesConfig.TokenTTL,
 			servicesConfig.Cipher,
 		),
 		List: NewListService(servicesConfig.Repos.List),

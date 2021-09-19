@@ -3,6 +3,7 @@ package repository
 import (
 	"github.com/hostingvk4/badgerList/internal/models"
 	"gorm.io/gorm"
+	"time"
 )
 
 type AuthPostgres struct {
@@ -26,8 +27,19 @@ func (r *AuthPostgres) GetUser(username, password string) (models.User, error) {
 	return userModel, err
 }
 
-func (r *AuthPostgres) SetRefreshToken(userId uint, token models.RefreshToken) error {
+func (r *AuthPostgres) SetRefreshToken(token models.RefreshToken) error {
 	result := r.db.Create(&token)
 
 	return result.Error
+}
+
+func (r *AuthPostgres) UpdateRefreshToken(oldRefreshToken string, refreshToken models.RefreshToken) error {
+	var tokenModel models.RefreshToken
+	err := r.db.Where("user_id = ? AND refresh_token = ? AND expires_at > ?", refreshToken.UserId, oldRefreshToken, time.Now()).First(&tokenModel).Error
+	if err == nil {
+		tokenModel.RefreshToken = refreshToken.RefreshToken
+		tokenModel.ExpiresAt = refreshToken.ExpiresAt
+		err = r.db.Model(&tokenModel).Updates(models.RefreshToken{RefreshToken: refreshToken.RefreshToken, ExpiresAt: refreshToken.ExpiresAt}).Error
+	}
+	return err
 }

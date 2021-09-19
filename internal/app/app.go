@@ -51,7 +51,8 @@ func Run(configPath string) {
 	services := service.NewService(service.ServicesConfig{
 		Repos:              repos,
 		TokenAdministrator: tokenAdministrator,
-		RefreshTokenTTL:    24 * time.Hour,
+		RefreshTokenTTL:    240 * time.Hour,
+		TokenTTL:           24 * time.Minute,
 		Cipher:             cipherPass,
 	})
 	handlers := handler.NewHandler(services)
