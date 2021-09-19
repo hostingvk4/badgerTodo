@@ -28,10 +28,8 @@ func (r *ListPostgres) GetAll(userId uint) ([]models.List, error) {
 }
 func (r *ListPostgres) GetListById(userId, listId uint) (models.List, error) {
 	var lists models.List
-	if err := r.db.Where("id = ? AND user_id = ?", listId, userId).First(&lists).Error; err != nil {
-		return lists, err
-	}
-	return lists, nil
+	err := r.db.Where("id = ? AND user_id = ?", listId, userId).First(&lists).Error
+	return lists, err
 }
 func (r *ListPostgres) Update(userId, listId uint, listData models.List) error {
 	var lists models.List

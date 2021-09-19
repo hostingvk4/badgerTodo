@@ -21,9 +21,9 @@ func (r *AuthPostgres) CreateUser(user models.User) (uint, error) {
 
 func (r *AuthPostgres) GetUser(username, password string) (models.User, error) {
 	var userModel models.User
-	result := r.db.Where("username = ? AND password = ?", username, password).Find(&userModel)
+	err := r.db.Where("username = ? AND password = ?", username, password).First(&userModel).Error
 
-	return userModel, result.Error
+	return userModel, err
 }
 
 func (r *AuthPostgres) SetRefreshToken(userId uint, token models.RefreshToken) error {

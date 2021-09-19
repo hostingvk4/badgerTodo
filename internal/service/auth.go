@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"github.com/hostingvk4/badgerList/internal/models"
 	"github.com/hostingvk4/badgerList/internal/repository"
 	"github.com/hostingvk4/badgerList/pkg/auth"
@@ -39,9 +38,6 @@ func (s *AuthService) GenerateToken(username, password string) (Tokens, error) {
 	userModel, err := s.repo.GetUser(username, passwordHash)
 	if err != nil {
 		return Tokens{}, err
-	}
-	if userModel.ID == 0 {
-		return Tokens{}, errors.New("customer not found")
 	}
 
 	return s.createTokens(userModel.ID)
