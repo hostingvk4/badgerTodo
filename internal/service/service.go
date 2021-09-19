@@ -4,6 +4,7 @@ import (
 	"github.com/hostingvk4/badgerList/internal/models"
 	"github.com/hostingvk4/badgerList/internal/repository"
 	"github.com/hostingvk4/badgerList/pkg/auth"
+	"github.com/hostingvk4/badgerList/pkg/cipher"
 	"time"
 )
 
@@ -35,6 +36,7 @@ type ServicesConfig struct {
 	Repos              *repository.Repository
 	TokenAdministrator auth.TokenAdministrator
 	RefreshTokenTTL    time.Duration
+	Cipher             cipher.PasswordCipher
 }
 
 func NewService(servicesConfig ServicesConfig) *Service {
@@ -43,6 +45,7 @@ func NewService(servicesConfig ServicesConfig) *Service {
 			servicesConfig.Repos.Authorization,
 			servicesConfig.TokenAdministrator,
 			servicesConfig.RefreshTokenTTL,
+			servicesConfig.Cipher,
 		),
 		List: NewListService(servicesConfig.Repos.List),
 	}

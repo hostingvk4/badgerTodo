@@ -9,6 +9,7 @@ import (
 	"github.com/hostingvk4/badgerList/internal/server"
 	"github.com/hostingvk4/badgerList/internal/service"
 	"github.com/hostingvk4/badgerList/pkg/auth"
+	"github.com/hostingvk4/badgerList/pkg/cipher"
 	"github.com/joho/godotenv"
 	"github.com/spf13/viper"
 	"log"
@@ -39,6 +40,7 @@ func Run(configPath string) {
 		log.Fatalf("failed to initialize db: %s", err.Error())
 		return
 	}
+	cipherPass := cipher.NewCipher("aweawddsadfas23423asda")
 	tokenAdministrator, err := auth.NewAdministrator("qweqsadawqe234324asdas")
 	if err != nil {
 		log.Fatalf("failed to initialize signing key : %s", err.Error())
@@ -46,7 +48,12 @@ func Run(configPath string) {
 	}
 
 	repos := repository.NewRepository(db)
-	services := service.NewService(service.ServicesConfig{Repos: repos, TokenAdministrator: tokenAdministrator, RefreshTokenTTL: 24 * time.Hour})
+	services := service.NewService(service.ServicesConfig{
+		Repos:              repos,
+		TokenAdministrator: tokenAdministrator,
+		RefreshTokenTTL:    24 * time.Hour,
+		Cipher:             cipherPass,
+	})
 	handlers := handler.NewHandler(services)
 	srv := new(server.Server)
 	go func() {
